@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.venv/
+__pycache__/
+*.py[cod]
+*.log
+
+# Large artifacts belong on the RunPod network volume, not in Git.
+datasets/
+checkpoints/
+models/
+outputs/
+artifacts/
+
