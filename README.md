@@ -18,6 +18,8 @@ BEHAVIOR-1K 2026 환경을 RunPod에서 재현하기 위한 최소 실행 저장
 
 ## RunPod에서 실행
 
+SSH 키 설정, 접속 명령과 문제 해결은 [`runpod_connect.md`](runpod_connect.md)를 먼저 확인합니다.
+
 Pod 생성 후 터미널에서:
 
 ```bash
@@ -66,4 +68,3 @@ bash scripts/03_download_task_demos.sh 0
 - 첫 로봇: `R1Pro`
 
 버전은 재현성을 위해 자동으로 최신화하지 않습니다.
-
