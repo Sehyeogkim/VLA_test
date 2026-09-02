@@ -14,6 +14,7 @@ mkdir -p "${OUTPUT_ROOT}/logs"
 
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate "${BEHAVIOR_ENV_PREFIX}"
+BEHAVIOR_PYTHON="${BEHAVIOR_ENV_PREFIX}/bin/python"
 
 export OMNI_KIT_ACCEPT_EULA=YES
 export OMNIGIBSON_HEADLESS=1
@@ -22,7 +23,7 @@ export OMNIGIBSON_GPU_ID="${OMNIGIBSON_GPU_ID:-0}"
 echo "Running the official cached R1Pro BEHAVIOR example for one 100-step episode."
 echo "The script scales random actions to 10% of the action range."
 
-python - <<'PY' 2>&1 | tee "${OUTPUT_ROOT}/logs/r1pro-smoke.log"
+"${BEHAVIOR_PYTHON}" - <<'PY' 2>&1 | tee "${OUTPUT_ROOT}/logs/r1pro-smoke.log"
 from omnigibson.examples.environments import behavior_env_demo
 
 # Select the pre-sampled cached task automatically and avoid an interactive UI prompt.
@@ -32,4 +33,3 @@ PY
 
 echo
 echo "Smoke test complete. Log: ${OUTPUT_ROOT}/logs/r1pro-smoke.log"
-
