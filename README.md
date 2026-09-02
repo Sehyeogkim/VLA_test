@@ -4,6 +4,8 @@ BEHAVIOR-1K 2026 환경을 RunPod에서 재현하기 위한 최소 실행 저장
 
 프로젝트 목적과 에이전트 작업 원칙은 [`AGENTS.md`](AGENTS.md), Claude Code용 진입점은 [`CLAUDE.md`](CLAUDE.md)를 참고합니다.
 
+완전히 새 RunPod에서 시작하는 검증된 설치 순서와 실제 오류 해결 기록은 [`procedure_runpod.md`](procedure_runpod.md)를 따릅니다.
+
 ## 지금은 데이터셋부터 받지 않습니다
 
 첫 순서는 아래와 같습니다.
@@ -24,11 +26,14 @@ SSH 키 설정, 접속 명령과 문제 해결은 [`runpod_connect.md`](runpod_c
 
 Pod 생성 후 터미널에서:
 
+아래 명령은 `/workspace/environments/miniforge3`가 이미 준비된 경우의 재개 절차입니다. 완전히 새 Volume이라면 먼저 [`procedure_runpod.md`](procedure_runpod.md)의 Miniforge 설치 단계부터 실행합니다.
+
 ```bash
 cd /workspace
 git clone https://github.com/Sehyeogkim/VLA_test.git
 cd VLA_test
 
+bash scripts/00_install_system_deps.sh
 bash scripts/00_preflight_runpod.sh
 bash scripts/01_install_behavior.sh
 bash scripts/02_smoke_behavior.sh
