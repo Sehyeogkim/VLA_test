@@ -442,6 +442,13 @@ Stop 후:
 
 다음 실행에서는 새 데이터셋이나 학습으로 넘어가기 전에 observation capture를 구현한다.
 
+구현된 캡처 명령:
+
+```bash
+cd /workspace/VLA_test
+bash scripts/04_capture_r1pro_visuals.sh
+```
+
 목표 출력:
 
 ```text
@@ -476,6 +483,7 @@ RGB / Depth / proprioception 검증
 - `scripts/01_install_behavior.sh`: BEHAVIOR 공식 설치
 - `scripts/02_smoke_behavior.sh`: R1Pro cached task smoke test
 - `scripts/03_download_task_demos.sh`: 이후 task별 demo chunk 다운로드
+- `scripts/04_capture_r1pro_visuals.sh`: 실제 Isaac Sim PNG, Depth, MP4 캡처
 
 공식 기준:
 
