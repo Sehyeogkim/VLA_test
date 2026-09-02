@@ -2,12 +2,14 @@
 
 BEHAVIOR-1K 2026 환경을 RunPod에서 재현하기 위한 최소 실행 저장소입니다.
 
+프로젝트 목적과 에이전트 작업 원칙은 [`AGENTS.md`](AGENTS.md), Claude Code용 진입점은 [`CLAUDE.md`](CLAUDE.md)를 참고합니다.
+
 ## 지금은 데이터셋부터 받지 않습니다
 
 첫 순서는 아래와 같습니다.
 
 1. 로컬에서 설치·검증 스크립트를 준비하고 GitHub에 반영
-2. RunPod A6000 Pod과 250GB Network Volume 생성
+2. RunPod 48GB GPU Pod(현재 A40)과 250GB Network Volume 생성
 3. `/workspace` 마운트 및 GPU 사전 점검
 4. BEHAVIOR-1K `v3.9.2`와 필수 시뮬레이터 자산 설치
 5. R1Pro 공식 random-action smoke test
