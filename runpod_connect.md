@@ -51,12 +51,25 @@ ssh -t 1l1snvbh5l86jq-64411b54@ssh.runpod.io -i ~/.ssh/id_ed25519_runpod
 ```bash
 cd /workspace/VLA_test
 git pull --ff-only
+bash scripts/00_install_system_deps.sh
 bash scripts/00_preflight_runpod.sh
 ```
+
+`00_install_system_deps.sh`는 Isaac Sim의 headless Vulkan 실행에 필요한 EGL/GL/GLU/Xt 패키지를 설치한다. 이 패키지는 `/workspace`가 아니라 Pod 컨테이너에 설치되므로, **Pod를 새로 만들거나 컨테이너를 reset/redeploy한 뒤에는 다시 실행**한다. 스크립트는 여러 번 실행해도 안전하다.
+
+RunPod Pod 환경 변수에는 다음 값이 필요하다.
+
+```text
+NVIDIA_DRIVER_CAPABILITIES=all
+NVIDIA_VISIBLE_DEVICES=all
+```
+
+RunPod 런타임이 `NVIDIA_VISIBLE_DEVICES`를 내부적으로 바꾸더라도 `nvidia-smi`와 `vulkaninfo --summary`에서 실제 GPU가 보이면 정상이다.
 
 정상이라면 다음 항목이 출력된다.
 
 - GPU 이름과 VRAM
+- Vulkan에서 인식한 GPU
 - `/workspace` Network Volume 마운트 정보
 - Python, Conda, Git 버전
 - `Preflight passed. /workspace is writable.`
@@ -79,6 +92,23 @@ bash scripts/01_install_behavior.sh
 ```
 
 공식 라이선스 동의 질문은 직접 읽고 응답한다. 전체 데모 데이터셋은 아직 다운로드하지 않는다.
+
+## R1Pro smoke test
+
+설치가 끝난 뒤 다음 명령으로 공식 cached BEHAVIOR 예제를 headless로 100 step 실행한다.
+
+```bash
+cd /workspace/VLA_test
+bash scripts/02_smoke_behavior.sh
+```
+
+첫 실행은 shader, collision, TorchInductor 캐시 생성 때문에 10~20분 이상 걸릴 수 있다. `Imported scene 0`, `Welcome to OmniGibson!` 같은 로그가 보이고 CPU/GPU가 활동 중이면 기다린다. 성공 시 다음 메시지가 출력된다.
+
+```text
+Smoke test complete. Log: /workspace/outputs/logs/r1pro-smoke.log
+```
+
+2026-09-02 A40 검증에서는 Isaac Sim 5.1이 Vulkan으로 A40을 인식했고 R1Pro 100-step smoke test가 약 14분 38초에 정상 종료됐다.
 
 ## 자주 발생하는 오류
 

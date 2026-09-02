@@ -14,9 +14,17 @@ if [[ ! -d "${VLA_WORKSPACE}" ]]; then
   exit 1
 fi
 
-for command_name in nvidia-smi git curl conda; do
+for command_name in nvidia-smi git curl conda ldconfig vulkaninfo; do
   if ! command -v "${command_name}" >/dev/null 2>&1; then
     echo "ERROR: Required command not found: ${command_name}" >&2
+    exit 1
+  fi
+done
+
+for library_name in libEGL.so.1 libGL.so.1 libGLU.so.1 libXt.so.6; do
+  if ! ldconfig -p | grep -F "${library_name}" >/dev/null; then
+    echo "ERROR: Required graphics library not found: ${library_name}" >&2
+    echo "Run scripts/00_install_system_deps.sh inside the Pod first." >&2
     exit 1
   fi
 done
@@ -27,6 +35,10 @@ rm -f "${probe_path}"
 
 echo "== GPU =="
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
+
+echo
+echo "== Vulkan =="
+vulkaninfo --summary 2>/dev/null | sed -n '/Devices:/,$p'
 
 echo
 echo "== Persistent workspace =="
@@ -50,4 +62,3 @@ fi
 
 echo
 echo "Preflight passed. ${VLA_WORKSPACE} is writable."
-

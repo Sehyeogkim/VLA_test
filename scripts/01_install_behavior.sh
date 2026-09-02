@@ -4,6 +4,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/runpod_env.sh"
 
+bash "${SCRIPT_DIR}/00_install_system_deps.sh"
 bash "${SCRIPT_DIR}/00_preflight_runpod.sh"
 
 mkdir -p \
@@ -59,4 +60,3 @@ cd "${PATH_TO_BEHAVIOR_1K}"
 echo
 echo "Installation complete. Persistent environment: ${BEHAVIOR_ENV_PREFIX}"
 echo "Next: bash ${VLA_REPO}/scripts/02_smoke_behavior.sh"
-
