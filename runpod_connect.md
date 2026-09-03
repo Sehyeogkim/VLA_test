@@ -7,9 +7,10 @@
 - RunPod 콘솔의 Pod `Connect` 탭에 표시되는 SSH 명령을 기준으로 한다.
 - Pod를 새로 생성하면 Pod ID와 SSH 사용자 문자열이 바뀔 수 있다.
 - 개인키와 API 키는 절대로 GitHub에 커밋하지 않는다.
-- 코드, 환경, 데이터, 체크포인트, 출력은 모두 영구 Network Volume인 `/workspace` 아래에 둔다.
+- 코드, 환경, 데이터, 체크포인트, 출력은 모두 persistent storage가 마운트된 `/workspace` 아래에 둔다.
 - `exit`는 SSH 접속만 종료한다. GPU 과금을 멈추려면 RunPod 콘솔에서 Pod를 `Stop`해야 한다.
-- Pod를 멈춰도 Network Volume 저장 비용은 계속 발생한다. Volume을 삭제하면 그 안의 파일도 삭제된다.
+- Pod를 멈춰도 Volume disk 또는 Network Volume의 저장 비용은 계속 발생한다.
+- Volume disk는 Pod에 종속되고 다른 호스트로 이동할 때 migration이 필요하다. 새 구축에서는 독립 Network Volume을 권장한다.
 
 ## 현재 사용하는 SSH 키
 
@@ -70,7 +71,7 @@ RunPod 런타임이 `NVIDIA_VISIBLE_DEVICES`를 내부적으로 바꾸더라도 
 
 - GPU 이름과 VRAM
 - Vulkan에서 인식한 GPU
-- `/workspace` Network Volume 마운트 정보
+- `/workspace` persistent storage 마운트 정보
 - Python, Conda, Git 버전
 - `Preflight passed. /workspace is writable.`
 
@@ -155,7 +156,7 @@ source /workspace/VLA_test/scripts/runpod_env.sh
 conda --version
 ```
 
-파일 자체가 없다면 새로운 Network Volume이거나 설치되지 않은 상태다. Miniforge를 `/workspace/environments/miniforge3`에 다시 설치한 뒤 preflight를 실행한다.
+파일 자체가 없다면 비어 있는 새 storage이거나 설치되지 않은 상태다. Miniforge를 `/workspace/environments/miniforge3`에 다시 설치한 뒤 preflight를 실행한다.
 
 ## 작업 종료
 
@@ -165,4 +166,4 @@ Pod 안에서:
 exit
 ```
 
-그다음 RunPod 콘솔에서 반드시 Pod를 `Stop`하고 상태가 멈췄는지 확인한다. `/workspace`의 Network Volume은 유지되므로 저장한 코드, 환경, 데이터와 출력은 다음 Pod에서도 다시 연결해 사용할 수 있다.
+그다음 RunPod 콘솔에서 반드시 Pod를 `Stop`하고 상태가 멈췄는지 확인한다. `/workspace` 데이터는 유지되지만 저장공간 유형에 따라 재사용 방식이 다르다. Network Volume은 같은 데이터센터의 새 Pod에 다시 연결할 수 있고, Volume disk는 원래 Pod/호스트에 종속되어 필요하면 RunPod migration을 거쳐야 한다.

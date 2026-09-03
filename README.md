@@ -11,7 +11,7 @@ BEHAVIOR-1K 2026 환경을 RunPod에서 재현하기 위한 최소 실행 저장
 첫 순서는 아래와 같습니다.
 
 1. 로컬에서 설치·검증 스크립트를 준비하고 GitHub에 반영
-2. RunPod 48GB GPU Pod(현재 A40)과 250GB Network Volume 생성
+2. RunPod 48GB GPU Pod(현재 A40)과 250GB 독립 Network Volume 생성
 3. `/workspace` 마운트 및 GPU 사전 점검
 4. BEHAVIOR-1K `v3.9.2`와 필수 시뮬레이터 자산 설치
 5. R1Pro 공식 random-action smoke test
@@ -37,6 +37,7 @@ bash scripts/00_install_system_deps.sh
 bash scripts/00_preflight_runpod.sh
 bash scripts/01_install_behavior.sh
 bash scripts/02_smoke_behavior.sh
+bash scripts/04_capture_r1pro_visuals.sh
 ```
 
 설치 스크립트는 Conda, NVIDIA Isaac Sim, BEHAVIOR Dataset 약관을 터미널에 표시합니다. 내용을 확인하고 사용자가 직접 동의해야 설치가 계속됩니다.
@@ -48,6 +49,8 @@ bash scripts/03_download_task_demos.sh 0
 ```
 
 기본값 `0`은 첫 번째 task chunk입니다. 전체 데이터셋을 다운로드하는 명령은 의도적으로 제공하지 않습니다.
+
+실제 R1Pro viewer PNG, 외부·머리·좌우 손목 RGB/Depth와 random-action MP4는 `/workspace/outputs/visuals/r1pro_cached_task`에 저장됩니다.
 
 ## 영속 저장 위치
 
@@ -64,7 +67,7 @@ bash scripts/03_download_task_demos.sh 0
 └── outputs/
 ```
 
-`/workspace` 밖의 Container Disk 파일은 Pod 수명과 함께 사라질 수 있습니다.
+`/workspace` 밖의 Container Disk 파일은 Pod 수명과 함께 사라질 수 있습니다. 신규 환경에서는 Pod 종속 Volume disk가 아니라 독립 Network Volume을 `/workspace`에 연결하는 구성을 권장합니다.
 
 ## 고정한 공식 버전
 

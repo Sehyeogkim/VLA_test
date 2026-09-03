@@ -80,7 +80,7 @@ def save_depth_colormap(array: np.ndarray, path: Path) -> dict[str, float | None
         far = None
         gray = np.zeros(depth.shape, dtype=np.uint8)
 
-    colored = ImageOps.colorize(Image.fromarray(gray, mode="L"), black="#071330", white="#fff3a3")
+    colored = ImageOps.colorize(Image.fromarray(gray), black="#071330", white="#fff3a3")
     colored.save(path)
     return {"display_near": near, "display_far": far}
 
@@ -115,13 +115,13 @@ def save_observation_tree(value: Any, parts: list[str], metadata: dict[str, Any]
     try:
         if "rgb" in lower_key and array.ndim == 3 and array.shape[-1] >= 3:
             filename = f"obs__{stem}.png"
-            Image.fromarray(rgb_to_uint8(array), mode="RGB").save(OUTPUT_DIR / filename)
+            Image.fromarray(rgb_to_uint8(array)).save(OUTPUT_DIR / filename)
             summary["visual_file"] = filename
         elif "depth" in lower_key and array.squeeze().ndim == 2:
             filename = f"depth__{stem}.png"
             summary.update(save_depth_colormap(array, OUTPUT_DIR / filename))
             summary["visual_file"] = filename
-        elif "proprio" in lower_key:
+        elif "proprio" in lower_key or "low_dim" in lower_key:
             filename = f"proprio__{stem}.npy"
             np.save(OUTPUT_DIR / filename, array)
             summary["data_file"] = filename
@@ -194,7 +194,7 @@ def main() -> None:
             if video_writer is not None:
                 video_writer.append_data(frame)
             elif step_index in {0, VIDEO_STEPS // 2, VIDEO_STEPS - 1}:
-                Image.fromarray(frame, mode="RGB").save(OUTPUT_DIR / f"episode_frame_{step_index:03d}.png")
+                Image.fromarray(frame).save(OUTPUT_DIR / f"episode_frame_{step_index:03d}.png")
 
             if terminated or truncated:
                 metadata["episode_finished_at_step"] = captured_steps

@@ -13,7 +13,7 @@
 | GPU VRAM | 46,068 MiB |
 | NVIDIA driver | 580.159.04 |
 | 그래픽 API | Vulkan, NVIDIA A40 인식 성공 |
-| Persistent storage | 250GB, `/workspace`에 마운트 |
+| Persistent storage | 250GB Volume disk, `/workspace`에 마운트 |
 | Container image | `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404` |
 | BEHAVIOR-1K | `v3.9.2` |
 | OmniGibson | 3.9.2 |
@@ -22,6 +22,7 @@
 | 평가 환경 PyTorch | 2.7.0+cu128 |
 | 로봇 | R1Pro |
 | smoke test | 공식 cached task 환경에서 random action 최대 100 step, 정상 종료 |
+| visual capture | 실제 viewer PNG, 카메라별 RGB/Depth, 60-step MP4 저장 성공 |
 | 첫 실행 시간 | 약 14분 38초 |
 | 현재 Pod 상태 | `EXITED`; GPU 과금 중지, persistent storage 유지 |
 
@@ -60,20 +61,20 @@
 - controller 및 RGB/Depth 센서 초기화
 - `env.reset()` 및 `env.step(action)` 반복 실행
 - 물리 시뮬레이션 후 정상 종료
+- 1280×720 viewer 이미지 전/후 저장
+- 외부, 머리 ZED, 좌·우 손목 카메라의 RGB/Depth 저장
+- 82차원 `low_dim` 상태 관측 확인
+- 60 random-action step을 10fps MP4로 저장
 
 아직 확인하지 않은 것은 다음이다.
 
 - `picking_up_trash` task 성공 여부
-- RGB/Depth frame의 실제 내용, key, shape 저장
-- 머리 및 양쪽 손목 카메라별 출력
-- proprioception key, shape, 값
 - action vector의 차원과 각 요소 의미
 - 기본 정책 또는 VLA checkpoint 추론
 - 공식 demonstration trajectory
 - 성공률, reward, task progress
-- 화면 이미지 또는 MP4
 
-따라서 현재 결과는 **task 성공 테스트가 아니라 simulator 실행 smoke test**다.
+따라서 현재 결과는 **simulator 실행과 observation/action 경로를 검증한 smoke test**이며, task 성공 또는 VLA 성능 평가는 아직 아니다.
 
 ## 3. Pod 생성 설정
 
@@ -82,7 +83,7 @@
 - GPU: A40 48GB, RTX A6000 48GB, RTX 6000 Ada 48GB 또는 L40S 48GB
 - 첫 검증에서 A40 48GB로 정상 실행됨
 - CPU RAM: 최소 32GB, 가능하면 64GB 이상
-- Persistent storage: 250GB 이상
+- Persistent storage: 250GB 이상. 새 구축에서는 독립 Network Volume 권장
 - Cloud: 가능하면 Secure Cloud
 - Container disk: 100GB
 
@@ -106,19 +107,22 @@ NVIDIA_VISIBLE_DEVICES=all
 22/tcp
 ```
 
-Persistent storage는 `/workspace`에 마운트한다. Pod와 storage는 같은 데이터센터에 있어야 한다.
+Persistent storage는 `/workspace`에 마운트한다. 장기간 재사용할 환경은 Pod 생성 화면에서 `Network volume`을 선택하고, 이미 만든 Network Volume을 연결한다. Pod와 Network Volume은 같은 데이터센터에 있어야 한다.
 
 ## 4. 저장공간 수명 구분
 
 반드시 다음 구분을 기억한다.
 
-| 위치 | 용도 | Pod Stop 후 |
-| --- | --- | --- |
-| `/workspace` | 코드, Conda, assets, 데이터, 모델, 결과 | 유지 |
-| `/root`, `/tmp`, `/opt` | 임시 파일 및 OS package | 보존을 가정하지 않음 |
-| Container의 apt package | EGL/GL/Vulkan system library | reset/redeploy 후 재설치 필요 |
+| 종류/위치 | 용도 | Pod Stop 후 | 다른 Pod에서 재사용 |
+| --- | --- | --- | --- |
+| Volume disk의 `/workspace` | 코드, Conda, assets, 데이터, 모델, 결과 | 유지 | 특정 호스트에 묶이므로 migration 필요 |
+| Network Volume의 `/workspace` | 같은 용도의 독립 저장공간 | 유지 | 같은 데이터센터의 호환 Pod에 다시 연결 가능 |
+| `/root`, `/tmp`, `/opt` | 임시 파일 및 OS package | 보존을 가정하지 않음 | 불가 |
+| Container의 apt package | EGL/GL/Vulkan system library | reset/redeploy 후 재설치 필요 | 불가 |
 
-`Stop`은 GPU를 중지하지만 persistent storage 비용은 계속 발생한다. `Terminate/Delete`와 storage 삭제는 같은 의미가 아니므로, 삭제 전 대상을 반드시 확인한다.
+`Stop`은 GPU를 중지하지만 persistent storage 비용은 계속 발생한다. Volume disk는 Pod에 종속되므로 Pod를 `Terminate`하면 함께 삭제된다. Network Volume은 Pod와 독립된 리소스여서 Pod를 종료해도 남지만, Network Volume 자체를 삭제하면 데이터가 사라진다.
+
+이번 2026-09-02 최초 설치는 화면상 `/workspace`가 영속적이었지만 실제 유형은 **Network Volume이 아니라 250GB Volume disk**였다. 원래 A40 호스트의 자리가 사라져 자동 Pod migration으로 새 A40 호스트에 데이터를 복사해야 했다. 다음 완전 신규 구축에서는 RunPod `Storage`에서 Network Volume을 먼저 만들거나, Pod 배포 화면에서 `Persistent storage: Network volume`과 기존 볼륨을 명시적으로 선택한다.
 
 ## 5. 로컬 SSH 키 준비
 
@@ -422,6 +426,19 @@ test -d /workspace/BEHAVIOR-1K/.git
 
 이후 필요한 단계부터 재개한다.
 
+### Volume disk의 GPU 자리가 사라졌을 때
+
+Volume disk는 원래 물리 호스트에 묶인다. 기존 Pod를 Start할 때 GPU capacity 오류가 나면 새 빈 Pod를 직접 만들지 말고 RunPod가 제공하는 `Automatically migrate your Pod data`를 사용한다. 2026-09-02 실제 migration에서는 약 149GB의 `/workspace`를 새 A40 Pod로 복사한 뒤 아래 네 경로를 확인했다.
+
+```bash
+test -d /workspace/VLA_test/.git
+test -x /workspace/environments/miniforge3/bin/conda
+test -x /workspace/environments/conda/envs/behavior/bin/python
+test -f /workspace/outputs/logs/r1pro-smoke.log
+```
+
+새 컨테이너에는 apt package가 없으므로 migration 후에도 `scripts/00_install_system_deps.sh`를 다시 실행한다. 장기적으로는 독립 Network Volume으로 이전해 GPU 호스트 교체 시 전체 migration을 피한다.
+
 ## 10. 작업 종료와 비용 차단
 
 SSH에서 `exit`를 입력하는 것만으로는 GPU 과금이 멈추지 않는다.
@@ -438,35 +455,36 @@ Stop 후:
 - `/workspace` 데이터 유지
 - persistent storage 비용은 계속 발생
 
-## 11. 다음 단계
+## 11. Visual capture 결과와 다음 단계
 
-다음 실행에서는 새 데이터셋이나 학습으로 넘어가기 전에 observation capture를 구현한다.
-
-구현된 캡처 명령:
+검증된 캡처 명령:
 
 ```bash
 cd /workspace/VLA_test
 bash scripts/04_capture_r1pro_visuals.sh
 ```
 
-목표 출력:
+2026-09-02 실제 출력:
 
 ```text
-/workspace/outputs/visuals/
-├── scene_rgb.png
-├── head_rgb.png
-├── left_wrist_rgb.png
-├── right_wrist_rgb.png
-├── depth_colormap.png
+/workspace/outputs/visuals/r1pro_cached_task/
+├── scene_r1pro_before.png
+├── scene_r1pro_after.png
+├── obs__state__external__external_sensor0__rgb.png
+├── obs__state__robot_adcuhk__robot_adcuhk_zed_link_Camera_0__rgb.png
+├── obs__state__robot_adcuhk__robot_adcuhk_left_realsense_link_Camera_0__rgb.png
+├── obs__state__robot_adcuhk__robot_adcuhk_right_realsense_link_Camera_0__rgb.png
+├── depth__*.png
 ├── random_action_episode.mp4
-└── observation_shapes.json
+└── capture_metadata.json
 ```
+
+메타데이터에서 외부·머리·양쪽 손목 RGB/Depth가 모두 128×128로 확인됐고, `state/task/low_dim`은 82차원이었다. MP4에는 60 step이 10fps로 기록됐다. 이후 실행부터 `low_dim` 원본도 `.npy`로 함께 저장한다.
 
 그 다음 순서는 다음과 같다.
 
 ```text
-RGB / Depth / proprioception 검증
-→ 제공된 checkpoint baseline 추론
+제공된 checkpoint baseline 추론
 → 공식 task 하나의 demonstration만 다운로드
 → 데이터 구조 확인
 → 소규모 fine-tuning

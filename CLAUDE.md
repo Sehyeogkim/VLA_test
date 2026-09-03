@@ -32,12 +32,13 @@ RunPod preflight
 
 ## 현재 상태와 다음 단계
 
-RunPod A40 48GB, `/workspace` Network Volume과 Miniforge preflight까지 완료되었다. 다음 단계는 아래 명령으로 BEHAVIOR를 설치하는 것이다.
+RunPod A40 48GB에서 BEHAVIOR-1K 설치, R1Pro cached-task smoke test, 실제 viewer 및 카메라별 RGB/Depth와 random-action MP4 캡처까지 완료되었다. 최초 `/workspace`는 독립 Network Volume이 아니라 250GB Volume disk였으므로, 호스트 변경에는 migration이 필요하다. 현재 Pod는 `EXITED`이며 다음 단계는 제공된 checkpoint의 baseline 추론 연결이다.
 
 ```bash
 cd /workspace/VLA_test
 git pull --ff-only
-bash scripts/01_install_behavior.sh
+bash scripts/00_install_system_deps.sh
+bash scripts/00_preflight_runpod.sh
 ```
 
 접속 정보와 문제 해결은 `runpod_connect.md`, 상세 목적·데이터·학습·평가 정책은 `AGENTS.md`를 참고한다.
